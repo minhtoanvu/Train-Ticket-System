@@ -1,5 +1,8 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using TrainTicket.Business.DTOs;
 using TrainTicket.Business.Interfaces;
 using TrainTicket.Data.DbContexts;
 
@@ -7,40 +10,38 @@ namespace TrainTicket.Business.Services
 {
     public class NotificationService : INotificationService
     {
-        private readonly TrainTicketDbContext _db;
+        private readonly TrainTicketDbContext _context;
 
-        public NotificationService(TrainTicketDbContext db) => _db = db;
-
-        public async Task<List<NotificationDto>> GetUnreadAsync(int userId) =>
-            await _db.Notifications
-                .Where(n => n.UserID == userId && !n.IsRead)
-                .OrderByDescending(n => n.CreatedAt)
-                .Take(50)
-                .Select(n => new NotificationDto
-                {
-                    NotiID    = n.NotiID,
-                    Title     = n.Title,
-                    Body      = n.Body,
-                    Type      = n.Type,
-                    IsRead    = n.IsRead,
-                    CreatedAt = n.CreatedAt,
-                    RelatedID = n.RelatedID
-                }).ToListAsync();
-
-        public async Task<int> GetUnreadCountAsync(int userId) =>
-            await _db.Notifications.CountAsync(n => n.UserID == userId && !n.IsRead);
-
-        public async Task MarkReadAsync(int notiId)
+        public NotificationService(TrainTicketDbContext context)
         {
-            var n = await _db.Notifications.FindAsync(notiId);
-            if (n != null) { n.IsRead = true; await _db.SaveChangesAsync(); }
+            _context = context;
         }
 
-        public async Task MarkAllReadAsync(int userId)
+        public async Task<int> GetUnreadCountAsync(int userId)
         {
-            await _db.Notifications
-                .Where(n => n.UserID == userId && !n.IsRead)
-                .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
+            return await _context.Notifications
+                .AsNoTracking()
+                .CountAsync(n => n.UserId == userId && n.IsRead == false);
+        }
+
+        public async Task<System.Collections.IList> GetRecentNotificationsAsync(int userId, int limit = 10)
+        {
+            return await _context.Notifications
+                .AsNoTracking()
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(limit)
+                .Select(n => new { n.Title, n.Body, n.CreatedAt, n.IsRead })
+                .ToListAsync();
+        }
+
+        public async Task MarkAsReadAsync(int userId)
+        {
+            var unread = await _context.Notifications
+                .Where(n => n.UserId == userId && n.IsRead == false)
+                .ToListAsync();
+            unread.ForEach(n => n.IsRead = true);
+            if (unread.Any()) await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,18 +1,21 @@
-using System.Data;
+ï»¿using System.Data;
 using TrainTicket.Business.DTOs;
 
 namespace TrainTicket.Business.Interfaces
 {
-    // Service nghi?p v? tìm chuy?n và l?y s? ?? gh?.
+    /// <summary>
+    /// Nghiep vu tim kiem chuyen tau va quan ly so do ghe.
+    /// </summary>
     public interface IScheduleService
     {
-        // G?i SP tìm chuy?n theo ga ?i/ga ??n/ngày ?i.
+        /// <summary>Tim chuyen theo ga di, ga den, ngay di.</summary>
+        Task<System.Collections.IList> GetAllStationsAsync();
         Task<DataTable> SearchSchedulesAsync(SearchScheduleDto request);
 
-        // G?i SP l?y tr?ng thái gh? c?a m?t chuy?n.
+        /// <summary>Lay danh sach ghe va trang thai cua mot chuyen tau.</summary>
         Task<List<SeatMapDto>> GetSeatMapAsync(int scheduleId);
 
-        // C?p nh?p tr?ng thái chuy?n
+        /// <summary>Cap nhat trang thai chuyen tau (On Time / Delayed / Cancelled).</summary>
         Task<bool> UpdateScheduleStatusAsync(int scheduleId, string status, int? delayMinutes = null);
     }
 }

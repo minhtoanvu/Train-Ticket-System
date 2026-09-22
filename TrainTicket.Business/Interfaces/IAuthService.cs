@@ -1,20 +1,26 @@
-using TrainTicket.Business.DTOs;
+ï»¿using TrainTicket.Business.DTOs;
 
 namespace TrainTicket.Business.Interfaces
 {
-    // Service nghi?p v? xác th?c ng??i dùng.
+    /// <summary>
+    /// Nghiep vu xac thuc nguoi dung: dang nhap, dang ky, doi mat khau, mo khoa tai khoan.
+    /// </summary>
     public interface IAuthService
     {
-        // Tr? v? thông tin phiên ??ng nh?p n?u h?p l?; ng??c l?i tr? null.
+        /// <summary>
+        /// Dang nhap voi email va mat khau.
+        /// Tra ve thong tin phien neu hop le; null neu sai thong tin.
+        /// Nem <see cref="InvalidOperationException"/> neu tai khoan bi khoa.
+        /// </summary>
         Task<UserSessionDto?> LoginAsync(LoginRequestDto request);
 
-        // ??ng k? t?i kho?n m?i.
+        /// <summary>Dang ky tai khoan moi. Tra ve false neu email da ton tai.</summary>
         Task<bool> RegisterAsync(RegisterRequestDto request);
 
-        // ??i m?t kh?u
+        /// <summary>Doi mat khau. Nem exception neu mat khau cu sai.</summary>
         Task<bool> ChangePasswordAsync(int userId, string oldPassword, string newPassword);
 
-        // M? khóa tài kho?n (Admin)
+        /// <summary>Mo khoa tai khoan bi khoa (Admin).</summary>
         Task<bool> UnlockAccountAsync(int userId);
     }
 }

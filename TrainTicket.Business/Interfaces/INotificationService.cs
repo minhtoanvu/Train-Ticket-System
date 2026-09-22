@@ -1,12 +1,12 @@
-using TrainTicket.Business.DTOs;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace TrainTicket.Business.Interfaces
 {
     public interface INotificationService
     {
-        Task<List<NotificationDto>> GetUnreadAsync(int userId);
         Task<int> GetUnreadCountAsync(int userId);
-        Task MarkReadAsync(int notiId);
-        Task MarkAllReadAsync(int userId);
+        Task<System.Collections.IList> GetRecentNotificationsAsync(int userId, int limit = 10);
+        Task MarkAsReadAsync(int userId);
     }
 }

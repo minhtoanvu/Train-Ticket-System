@@ -1,18 +1,23 @@
-namespace TrainTicket.Business.DTOs
+ï»¿namespace TrainTicket.Business.DTOs
 {
-    // DTO dòng d? li?u s? ?? gh?.
-    // M?i record t??ng ?ng 1 gh? tr? v? t? sp_XemSoDoGhe.
+    /// <summary>
+    /// Du lieu mot ghe trong so do ghe, tra ve tu sp_XemSoDoGhe.
+    /// </summary>
     public class SeatMapDto
     {
-        public string MaToa { get; set; } = string.Empty;
-        public string LoaiToa { get; set; } = string.Empty;
-        public string SoGhe { get; set; } = string.Empty;
-        public string LoaiGhe { get; set; } = string.Empty;
-        public string HangGhe { get; set; } = "Economic";
-        public bool HasSocket { get; set; } = false;
-        public int SeatID { get; set; }
-        public string TrangThai { get; set; } = string.Empty;
-        public decimal GiaVe { get; set; }
-        public bool IsAvailable => TrangThai == "Tr?ng";
+        // Trang thai ghe khi ghe chua co nguoi dat
+        private const string StatusAvailable = "Trong";
+
+        public string  MaToa     { get; set; } = string.Empty;
+        public string  LoaiToa   { get; set; } = string.Empty;
+        public string  SoGhe     { get; set; } = string.Empty;
+        public string  LoaiGhe   { get; set; } = string.Empty;
+        public string  HangGhe   { get; set; } = "Economic";
+        public bool    HasSocket  { get; set; }
+        public int     SeatID    { get; set; }
+        public string  TrangThai { get; set; } = string.Empty;
+        public decimal GiaVe     { get; set; }
+
+        public bool IsAvailable => TrangThai == StatusAvailable;
     }
 }

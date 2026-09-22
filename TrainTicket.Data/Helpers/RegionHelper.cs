@@ -11,10 +11,10 @@ namespace TrainTicket.Data.Helpers
         {
             return code switch
             {
-                "North" => "Mi?n B?c",
-                "Central" => "Mi?n Trung",
-                "South" => "Mi?n Nam",
-                _ => "Tr? s? ch�nh"
+                "North" => "Miền Bắc",
+                "Central" => "Miền Trung",
+                "South" => "Miền Nam",
+                _ => "Trụ sở chính"
             };
         }
     }

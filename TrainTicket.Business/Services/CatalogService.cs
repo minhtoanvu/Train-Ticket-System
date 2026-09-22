@@ -6,369 +6,331 @@ using TrainTicket.Data.Entities;
 
 namespace TrainTicket.Business.Services
 {
+    /// <summary>
+    /// Quan ly danh muc: Tau, Ga, Tuyen duong, Lich trinh.
+    /// Cac thao tac Create/Read/Update/Delete dung soft-delete (IsActive = false).
+    /// </summary>
     public class CatalogService : ICatalogService
     {
         private readonly TrainTicketDbContext _db;
 
-        public CatalogService(TrainTicketDbContext db)
-        {
-            _db = db;
-        }
+        public CatalogService(TrainTicketDbContext db) => _db = db;
 
-        // ?? TRAINS ???????????????????????????????????????
+        // ── TRAINS ────────────────────────────────────────
+
+        /// <inheritdoc/>
         public async Task<List<TrainDto>> GetAllTrainsAsync()
         {
             var trains = await _db.Trains
-                .Where(t => t.IsActive) // Gi? ??nh ch? l?y c�c t�u ?ang ho?t ??ng/ch?a b? soft delete
-                .OrderBy(t => t.TrainCode)
+                .Where(train => train.IsActive == true)
+                .OrderBy(train => train.TrainCode)
                 .ToListAsync();
 
-            return trains.Select(t => new TrainDto
-            {
-                TrainID = t.TrainID,
-                TrainCode = t.TrainCode,
-                TrainName = t.TrainName,
-                TrainType = t.TrainType,
-                IsActive = t.IsActive,
-                CreatedAt = t.CreatedAt,
-                RegionCode = t.RegionCode
-            }).ToList();
+            return trains.Select(MapToTrainDto).ToList();
         }
 
+        /// <inheritdoc/>
         public async Task<TrainDto?> GetTrainByIdAsync(int id)
         {
-            var t = await _db.Trains.FindAsync(id);
-            if (t == null) return null;
-
-            return new TrainDto
-            {
-                TrainID = t.TrainID,
-                TrainCode = t.TrainCode,
-                TrainName = t.TrainName,
-                TrainType = t.TrainType,
-                IsActive = t.IsActive,
-                CreatedAt = t.CreatedAt,
-                RegionCode = t.RegionCode
-            };
+            var train = await _db.Trains.FindAsync(id);
+            return train == null ? null : MapToTrainDto(train);
         }
 
-        public async Task<bool> SaveTrainAsync(TrainDto train)
+        /// <inheritdoc/>
+        public async Task<bool> SaveTrainAsync(TrainDto dto)
         {
-            if (train.TrainID == 0)
+            if (dto.TrainId == 0)
             {
                 var newTrain = new Train
                 {
-                    TrainCode = train.TrainCode,
-                    TrainName = train.TrainName,
-                    TrainType = train.TrainType,
+                    TrainCode = dto.TrainCode,
+                    TrainName = dto.TrainName,
+                    TrainType = dto.TrainType,
                     CreatedAt = DateTime.Now,
-                    IsActive = true,
-                    RegionCode = train.RegionCode
+                    IsActive  = true
                 };
                 await _db.Trains.AddAsync(newTrain);
             }
             else
             {
-                var existing = await _db.Trains.FindAsync(train.TrainID);
+                var existing = await _db.Trains.FindAsync(dto.TrainId);
                 if (existing == null) return false;
 
-                existing.TrainCode = train.TrainCode;
-                existing.TrainName = train.TrainName;
-                existing.TrainType = train.TrainType;
-                _db.Trains.Update(existing);
+                existing.TrainCode = dto.TrainCode;
+                existing.TrainName = dto.TrainName;
+                existing.TrainType = dto.TrainType;
             }
 
             await _db.SaveChangesAsync();
             return true;
         }
 
+        /// <inheritdoc/>
         public async Task<bool> DeleteTrainAsync(int id)
         {
-            var t = await _db.Trains.FindAsync(id);
-            if (t == null) return false;
-            
-            // Soft delete
-            t.IsActive = false;
+            var train = await _db.Trains.FindAsync(id);
+            if (train == null) return false;
+
+            train.IsActive = false;
             await _db.SaveChangesAsync();
             return true;
         }
 
-        // ?? STATIONS ?????????????????????????????????????
+        // ── STATIONS ──────────────────────────────────────
+
+        /// <inheritdoc/>
         public async Task<List<StationDto>> GetAllStationsAsync()
         {
             var stations = await _db.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.City)
-                .ThenBy(s => s.StationName)
+                .Where(station => station.IsActive == true)
+                .OrderBy(station => station.City)
+                .ThenBy(station => station.StationName)
                 .ToListAsync();
 
-            return stations.Select(s => new StationDto
-            {
-                StationID = s.StationID,
-                StationCode = s.StationCode,
-                StationName = s.StationName,
-                City = s.City,
-                Address = s.Address,
-                IsActive = s.IsActive,
-                CreatedAt = s.CreatedAt,
-                RegionCode = s.RegionCode
-            }).ToList();
+            return stations.Select(MapToStationDto).ToList();
         }
 
+        /// <inheritdoc/>
         public async Task<StationDto?> GetStationByIdAsync(int id)
         {
-            var s = await _db.Stations.FindAsync(id);
-            if (s == null) return null;
-
-            return new StationDto
-            {
-                StationID = s.StationID,
-                StationCode = s.StationCode,
-                StationName = s.StationName,
-                City = s.City,
-                Address = s.Address,
-                IsActive = s.IsActive,
-                CreatedAt = s.CreatedAt,
-                RegionCode = s.RegionCode
-            };
+            var station = await _db.Stations.FindAsync(id);
+            return station == null ? null : MapToStationDto(station);
         }
 
-        public async Task<bool> SaveStationAsync(StationDto station)
+        /// <inheritdoc/>
+        public async Task<bool> SaveStationAsync(StationDto dto)
         {
-            if (station.StationID == 0)
+            if (dto.StationId == 0)
             {
                 var newStation = new Station
                 {
-                    StationCode = station.StationCode,
-                    StationName = station.StationName,
-                    City = station.City,
-                    Address = station.Address,
-                    CreatedAt = DateTime.Now,
-                    IsActive = true,
-                    RegionCode = station.RegionCode
+                    StationCode = dto.StationCode,
+                    StationName = dto.StationName,
+                    City        = dto.City,
+                    Address     = dto.Address,
+                    CreatedAt   = DateTime.Now,
+                    IsActive    = true
                 };
                 await _db.Stations.AddAsync(newStation);
             }
             else
             {
-                var existing = await _db.Stations.FindAsync(station.StationID);
+                var existing = await _db.Stations.FindAsync(dto.StationId);
                 if (existing == null) return false;
 
-                existing.StationCode = station.StationCode;
-                existing.StationName = station.StationName;
-                existing.City = station.City;
-                existing.Address = station.Address;
-                _db.Stations.Update(existing);
+                existing.StationCode = dto.StationCode;
+                existing.StationName = dto.StationName;
+                existing.City        = dto.City;
+                existing.Address     = dto.Address;
             }
-            
+
             await _db.SaveChangesAsync();
             return true;
         }
 
+        /// <inheritdoc/>
         public async Task<bool> DeleteStationAsync(int id)
         {
-            var s = await _db.Stations.FindAsync(id);
-            if (s == null) return false;
-            
-            s.IsActive = false;
+            var station = await _db.Stations.FindAsync(id);
+            if (station == null) return false;
+
+            station.IsActive = false;
             await _db.SaveChangesAsync();
             return true;
         }
 
-        // ?? ROUTES ???????????????????????????????????????
+        // ── ROUTES ────────────────────────────────────────
+
+        /// <inheritdoc/>
         public async Task<List<RouteDto>> GetAllRoutesAsync()
         {
             var routes = await _db.Routes
-                .Include(r => r.DepartureStationNav)
-                .Include(r => r.ArrivalStationNav)
-                .Where(r => r.IsActive)
-                .OrderBy(r => r.RouteName)
+                .Include(route => route.DepartureStationNavigation)
+                .Include(route => route.ArrivalStationNavigation)
+                .Where(route => route.IsActive == true)
+                .OrderBy(route => route.RouteName)
                 .ToListAsync();
 
-            return routes.Select(r => new RouteDto
-            {
-                RouteID = r.RouteID,
-                RouteName = r.RouteName,
-                DepartureStation = r.DepartureStation,
-                ArrivalStation = r.ArrivalStation,
-                Distance = r.Distance,
-                RouteType = r.RouteType,
-                IsActive = r.IsActive,
-                CreatedAt = r.CreatedAt,
-                RegionCode = r.RegionCode,
-                DepartureStationName = r.DepartureStationNav?.StationName,
-                ArrivalStationName = r.ArrivalStationNav?.StationName
-            }).ToList();
+            return routes.Select(MapToRouteDto).ToList();
         }
 
+        /// <inheritdoc/>
         public async Task<RouteDto?> GetRouteByIdAsync(int id)
         {
-            var r = await _db.Routes
-                .Include(rt => rt.DepartureStationNav)
-                .Include(rt => rt.ArrivalStationNav)
-                .FirstOrDefaultAsync(rt => rt.RouteID == id);
+            var route = await _db.Routes
+                .Include(r => r.DepartureStationNavigation)
+                .Include(r => r.ArrivalStationNavigation)
+                .FirstOrDefaultAsync(r => r.RouteId == id);
 
-            if (r == null) return null;
-
-            return new RouteDto
-            {
-                RouteID = r.RouteID,
-                RouteName = r.RouteName,
-                DepartureStation = r.DepartureStation,
-                ArrivalStation = r.ArrivalStation,
-                Distance = r.Distance,
-                RouteType = r.RouteType,
-                IsActive = r.IsActive,
-                CreatedAt = r.CreatedAt,
-                RegionCode = r.RegionCode,
-                DepartureStationName = r.DepartureStationNav?.StationName,
-                ArrivalStationName = r.ArrivalStationNav?.StationName
-            };
+            return route == null ? null : MapToRouteDto(route);
         }
 
-        public async Task<bool> SaveRouteAsync(RouteDto route)
+        /// <inheritdoc/>
+        public async Task<bool> SaveRouteAsync(RouteDto dto)
         {
-            if (route.RouteID == 0)
+            if (dto.RouteId == 0)
             {
                 var newRoute = new Data.Entities.Route
                 {
-                    RouteName = route.RouteName,
-                    DepartureStation = route.DepartureStation,
-                    ArrivalStation = route.ArrivalStation,
-                    Distance = route.Distance,
-                    RouteType = route.RouteType,
-                    CreatedAt = DateTime.Now,
-                    IsActive = true,
-                    RegionCode = route.RegionCode
+                    RouteName        = dto.RouteName,
+                    DepartureStation = dto.DepartureStation,
+                    ArrivalStation   = dto.ArrivalStation,
+                    Distance         = dto.Distance,
+                    CreatedAt        = DateTime.Now,
+                    IsActive         = true
                 };
                 await _db.Routes.AddAsync(newRoute);
             }
             else
             {
-                var existing = await _db.Routes.FindAsync(route.RouteID);
+                var existing = await _db.Routes.FindAsync(dto.RouteId);
                 if (existing == null) return false;
 
-                existing.RouteName = route.RouteName;
-                existing.DepartureStation = route.DepartureStation;
-                existing.ArrivalStation = route.ArrivalStation;
-                existing.Distance = route.Distance;
-                existing.RouteType = route.RouteType;
-                _db.Routes.Update(existing);
+                existing.RouteName        = dto.RouteName;
+                existing.DepartureStation = dto.DepartureStation;
+                existing.ArrivalStation   = dto.ArrivalStation;
+                existing.Distance         = dto.Distance;
             }
-            
+
             await _db.SaveChangesAsync();
             return true;
         }
 
+        /// <inheritdoc/>
         public async Task<bool> DeleteRouteAsync(int id)
         {
-            var r = await _db.Routes.FindAsync(id);
-            if (r == null) return false;
-            
-            r.IsActive = false;
+            var route = await _db.Routes.FindAsync(id);
+            if (route == null) return false;
+
+            route.IsActive = false;
             await _db.SaveChangesAsync();
             return true;
         }
 
-        // ?? SCHEDULES ????????????????????????????????????
+        // ── SCHEDULES ─────────────────────────────────────
+
+        /// <inheritdoc/>
         public async Task<List<ScheduleDto>> GetAllSchedulesAsync()
         {
             var schedules = await _db.Schedules
-                .Include(s => s.Train)
-                .Include(s => s.Route)
-                    .ThenInclude(r => r.DepartureStationNav)
-                .Include(s => s.Route)
-                    .ThenInclude(r => r.ArrivalStationNav)
-                .Where(s => s.IsActive)
-                .OrderByDescending(s => s.DepartureTime)
+                .Include(schedule => schedule.Train)
+                .Include(schedule => schedule.Route)
+                    .ThenInclude(route => route.DepartureStationNavigation)
+                .Include(schedule => schedule.Route)
+                    .ThenInclude(route => route.ArrivalStationNavigation)
+                .Where(schedule => schedule.IsActive == true)
+                .OrderByDescending(schedule => schedule.DepartureTime)
                 .ToListAsync();
 
-            return schedules.Select(s => new ScheduleDto
-            {
-                ScheduleID = s.ScheduleID,
-                TrainID = s.TrainID,
-                RouteID = s.RouteID,
-                DepartureTime = s.DepartureTime,
-                ArrivalTime = s.ArrivalTime,
-                Status = s.Status,
-                IsActive = s.IsActive,
-                CreatedAt = s.CreatedAt,
-                RegionCode = s.RegionCode,
-                TrainName = s.Train?.TrainName,
-                RouteName = s.Route?.RouteName
-            }).ToList();
+            return schedules.Select(MapToScheduleDto).ToList();
         }
 
+        /// <inheritdoc/>
         public async Task<ScheduleDto?> GetScheduleByIdAsync(int id)
         {
-            var s = await _db.Schedules
+            var schedule = await _db.Schedules
                 .Include(sch => sch.Train)
                 .Include(sch => sch.Route)
-                    .ThenInclude(r => r.DepartureStationNav)
+                    .ThenInclude(route => route.DepartureStationNavigation)
                 .Include(sch => sch.Route)
-                    .ThenInclude(r => r.ArrivalStationNav)
-                .FirstOrDefaultAsync(sch => sch.ScheduleID == id);
+                    .ThenInclude(route => route.ArrivalStationNavigation)
+                .FirstOrDefaultAsync(sch => sch.ScheduleId == id);
 
-            if (s == null) return null;
-
-            return new ScheduleDto
-            {
-                ScheduleID = s.ScheduleID,
-                TrainID = s.TrainID,
-                RouteID = s.RouteID,
-                DepartureTime = s.DepartureTime,
-                ArrivalTime = s.ArrivalTime,
-                Status = s.Status,
-                IsActive = s.IsActive,
-                CreatedAt = s.CreatedAt,
-                RegionCode = s.RegionCode,
-                TrainName = s.Train?.TrainName,
-                RouteName = s.Route?.RouteName
-            };
+            return schedule == null ? null : MapToScheduleDto(schedule);
         }
 
-        public async Task<bool> SaveScheduleAsync(ScheduleDto schedule)
+        /// <inheritdoc/>
+        public async Task<bool> SaveScheduleAsync(ScheduleDto dto)
         {
-            if (schedule.ScheduleID == 0)
+            if (dto.ScheduleId == 0)
             {
                 var newSchedule = new Schedule
                 {
-                    TrainID = schedule.TrainID,
-                    RouteID = schedule.RouteID,
-                    DepartureTime = schedule.DepartureTime,
-                    ArrivalTime = schedule.ArrivalTime,
-                    Status = schedule.Status,
-                    CreatedAt = DateTime.Now,
-                    IsActive = true,
-                    RegionCode = schedule.RegionCode
+                    TrainId       = dto.TrainId,
+                    RouteId       = dto.RouteId,
+                    DepartureTime = dto.DepartureTime,
+                    ArrivalTime   = dto.ArrivalTime,
+                    Status        = dto.Status,
+                    CreatedAt     = DateTime.Now,
+                    IsActive      = true
                 };
                 await _db.Schedules.AddAsync(newSchedule);
             }
             else
             {
-                var existing = await _db.Schedules.FindAsync(schedule.ScheduleID);
+                var existing = await _db.Schedules.FindAsync(dto.ScheduleId);
                 if (existing == null) return false;
 
-                existing.TrainID = schedule.TrainID;
-                existing.RouteID = schedule.RouteID;
-                existing.DepartureTime = schedule.DepartureTime;
-                existing.ArrivalTime = schedule.ArrivalTime;
-                existing.Status = schedule.Status;
-                _db.Schedules.Update(existing);
+                existing.TrainId       = dto.TrainId;
+                existing.RouteId       = dto.RouteId;
+                existing.DepartureTime = dto.DepartureTime;
+                existing.ArrivalTime   = dto.ArrivalTime;
+                existing.Status        = dto.Status;
             }
-            
+
             await _db.SaveChangesAsync();
             return true;
         }
 
+        /// <inheritdoc/>
         public async Task<bool> DeleteScheduleAsync(int id)
         {
-            var s = await _db.Schedules.FindAsync(id);
-            if (s == null) return false;
-            
-            s.IsActive = false;
+            var schedule = await _db.Schedules.FindAsync(id);
+            if (schedule == null) return false;
+
+            schedule.IsActive = false;
             await _db.SaveChangesAsync();
             return true;
         }
+
+        // ── Private Mappers ───────────────────────────────
+
+        private static TrainDto MapToTrainDto(Train train) => new()
+        {
+            TrainId   = train.TrainId,
+            TrainCode = train.TrainCode,
+            TrainName = train.TrainName,
+            TrainType = train.TrainType,
+            IsActive  = train.IsActive ?? false,
+            CreatedAt = train.CreatedAt ?? DateTime.Now
+        };
+
+        private static StationDto MapToStationDto(Station station) => new()
+        {
+            StationId   = station.StationId,
+            StationCode = station.StationCode,
+            StationName = station.StationName,
+            City        = station.City,
+            Address     = station.Address,
+            IsActive    = station.IsActive ?? false,
+            CreatedAt   = station.CreatedAt ?? DateTime.Now
+        };
+
+        private static RouteDto MapToRouteDto(Data.Entities.Route route) => new()
+        {
+            RouteId              = route.RouteId,
+            RouteName            = route.RouteName,
+            DepartureStation     = route.DepartureStation,
+            ArrivalStation       = route.ArrivalStation,
+            Distance             = route.Distance,
+            IsActive             = route.IsActive ?? false,
+            CreatedAt            = route.CreatedAt ?? DateTime.Now,
+            DepartureStationName = route.DepartureStationNavigation?.StationName ?? string.Empty,
+            ArrivalStationName   = route.ArrivalStationNavigation?.StationName ?? string.Empty
+        };
+
+        private static ScheduleDto MapToScheduleDto(Schedule schedule) => new()
+        {
+            ScheduleId    = schedule.ScheduleId,
+            TrainId       = schedule.TrainId,
+            RouteId       = schedule.RouteId,
+            DepartureTime = schedule.DepartureTime,
+            ArrivalTime   = schedule.ArrivalTime,
+            Status        = schedule.Status ?? "Scheduled",
+            IsActive      = schedule.IsActive ?? false,
+            CreatedAt     = schedule.CreatedAt ?? DateTime.Now,
+            TrainName     = schedule.Train?.TrainName ?? string.Empty,
+            RouteName     = schedule.Route?.RouteName ?? string.Empty
+        };
     }
 }
